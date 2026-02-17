@@ -6,13 +6,30 @@ import time
 import plotly.graph_objects as go
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN
+# 1. KONFIGURASI HALAMAN & CSS MOBILE
 # ==========================================
 st.set_page_config(
     page_title="Cek Kelayakan Air Minum",
     page_icon="💧",
     layout="wide"
 )
+
+# --- CSS Tampilan Rapi di HP ---
+st.markdown("""
+    <style>
+        /* Mengurangi margin/padding berlebih di sisi kiri-kanan layar HP */
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 3rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        /* Agar judul tidak terlalu besar di layar kecil */
+        h1 {
+            font-size: 1.8rem !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # ==========================================
 # 2. LOAD MODEL & SCALER
@@ -65,7 +82,7 @@ trihalomethanes = st.sidebar.number_input("8. Trihalomethanes (μg/L)", 0.0, 125
 turbidity = st.sidebar.number_input("9. Turbidity (NTU)", 0.0, 7.0, def_turbid)
 
 # ==========================================
-# 4. FUNGSI VISUALISASI (RADAR CHART)
+# 4. FUNGSI VISUALISASI (RADAR CHART RESPONSIF)
 # ==========================================
 def plot_radar_chart(input_values):
     categories = [
@@ -74,7 +91,6 @@ def plot_radar_chart(input_values):
     ]
     
     values_user = list(input_values)
-    # Batas Visual (Acuan Grafik Hijau)
     values_limit = [8.5, 300, 25000, 10, 400, 600, 20, 100, 5] 
     
     val_norm_user = []
@@ -88,9 +104,24 @@ def plot_radar_chart(input_values):
     fig.add_trace(go.Scatterpolar(r=val_norm_limit, theta=categories, fill='toself', name='Batas Aman', line_color='green', opacity=0.4))
     fig.add_trace(go.Scatterpolar(r=val_norm_user, theta=categories, fill='toself', name='Sampel Anda', line_color='blue', opacity=0.6))
 
+    # --- UPDATED LAYOUT FOR MOBILE ---
     fig.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0, 2.0])),
-        showlegend=True, height=400, margin=dict(l=50, r=50, t=20, b=20)
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 2.0], tickfont=dict(size=9)),
+        ),
+        showlegend=True,
+        # LEGENDA DI BAWAH (Horizontal) agar grafik melebar penuh di HP
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.15,
+            xanchor="center",
+            x=0.5
+        ),
+        # Margin Tipis agar tidak buang tempat di layar kecil
+        margin=dict(l=30, r=30, t=30, b=50),
+        height=450,
+        font=dict(size=11)
     )
     return fig
 
@@ -100,7 +131,7 @@ def plot_radar_chart(input_values):
 st.title("💧 Aplikasi Cek Kelayakan Air Minum")
 st.markdown("Aplikasi ini menggunakan **Algoritma pemodelan Random Forest** untuk memprediksi layak atau tidaknya air untuk diminum. Silakan masukkan data sampel air hasil uji lab di sidebar sebelah kiri.")
 
-# --- BAGIAN EDUKASI (FULL 9 PARAMETER) ---
+# --- BAGIAN EDUKASI ---
 st.info("ℹ️ **Panduan Standar Kualitas Air WHO & Kemenkes (Penjelasan Parameter)**")
 with st.expander("Klik di sini untuk melihat Penjelasan Lengkap ke-9 Parameter", expanded=False):
     st.markdown("""
@@ -117,12 +148,12 @@ with st.expander("Klik di sini untuk melihat Penjelasan Lengkap ke-9 Parameter",
     | **9. Turbidity** | < 5.0 NTU | Kekeruhan (lumpur/debu). Tempat bakteri bersembunyi. |
     """)
 
-
 # ==========================================
 # 6. LOGIKA & OUTPUT
 # ==========================================
 st.markdown("---")
 
+# Menggunakan use_container_width=True agar tombol pas di layar HP
 if st.button("🔍 CEK KELAYAKAN SAMPEL AIR", type="primary", use_container_width=True):
     
     # --- PROCESS ---
@@ -140,6 +171,7 @@ if st.button("🔍 CEK KELAYAKAN SAMPEL AIR", type="primary", use_container_widt
     
     # --- RESULT HEADER ---
     st.markdown("---")
+    # Di HP col1 dan col2 akan otomatis menumpuk (stack)
     col_status, col_meter = st.columns([1.5, 1])
 
     with col_status:
@@ -160,31 +192,25 @@ if st.button("🔍 CEK KELAYAKAN SAMPEL AIR", type="primary", use_container_widt
     st.markdown("---")
     st.subheader("📝 Laporan Kesehatan Air (Parameter Fisik):")
     
-    # Layout kolom untuk laporan teks
     col_rep1, col_rep2 = st.columns(2)
     
     with col_rep1:
-        # 1. Cek pH
         if 6.5 <= ph <= 8.5:
             st.markdown("✅ **pH (Keasaman):** Normal/Netral (Aman).")
         else:
             st.markdown(f"⚠️ **pH (Keasaman):** Tidak Ideal ({ph}). Standar aman: 6.5 - 8.5.")
         
-        # 2. Cek Hardness (Kekerasan)
         if hardness < 300:
             st.markdown("✅ **Kekerasan (Hardness):** Lunak/Wajar (Aman).")
         else:
             st.markdown(f"⚠️ **Kekerasan (Hardness):** Tinggi ({hardness} mg/L). Berisiko menimbulkan kerak.")
 
     with col_rep2:
-        # 3. Cek Solids / TDS (Padatan Terlarut)
-        # Catatan: Standar ketat biasanya 500, tapi 1000 masih bisa ditoleransi.
         if solids < 1000:
             st.markdown("✅ **Padatan Terlarut (TDS):** Rendah/Wajar.")
         else:
             st.markdown(f"⚠️ **Padatan Terlarut (TDS):** Tinggi ({solids} ppm). Air mungkin berasa asin/logam.")
 
-        # 4. Cek Turbidity (Kekeruhan)
         if turbidity < 5.0:
             st.markdown("✅ **Kekeruhan:** Jernih (Aman).")
         else:
@@ -194,14 +220,17 @@ if st.button("🔍 CEK KELAYAKAN SAMPEL AIR", type="primary", use_container_widt
     st.markdown("---")
     st.subheader("📊 Visualisasi Profil Sampel Air")
     st.caption("Grafik Biru = Data Sampel Air Anda  |  Grafik Hijau = Batas Wajar.")
+    
     fig = plot_radar_chart(input_data[0])
+    # PENTING: use_container_width=True agar grafik menyesuaikan lebar HP
     st.plotly_chart(fig, use_container_width=True)
     
     # --- DATA TABLE ---
     st.markdown("---")
     with st.expander("📥 Lihat Rincian Data Input Sampel Air Anda"):
         df_input = pd.DataFrame(input_data, columns=['pH', 'Hardness', 'Solids', 'Chloramines', 'Sulfate', 'Conductivity', 'Org. Carbon', 'Trihalomethanes', 'Turbidity'])
-        st.dataframe(df_input, hide_index=True)
+        # PENTING: use_container_width=True agar tabel bisa discroll horizontal di HP
+        st.dataframe(df_input, hide_index=True, use_container_width=True)
 
 else:
     st.info("👈 Silakan masukkan data sampel air di sidebar sebelah kiri, lalu tekan tombol Cek Kelayakan Sampel Air")
