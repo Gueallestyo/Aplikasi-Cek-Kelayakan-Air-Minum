@@ -44,11 +44,12 @@ Proyek ini dibangun menggunakan ekosistem Python:
 
 | Nama File | Deskripsi |
 | :--- | :--- |
-| `water_potability.csv`| Dataset mentah (Sumber: Kaggle). |
 | `Proyek_Klasifikasi_Kelayakan_Air_Minum.ipynb` | File Jupyter Notebook berisi proses analisis data, preprocessing, dan pelatihan model. |
-| `model_random_forest.pkl` | Model Random Forest yang sudah dilatih (Best Model). |
-| `minmax_scaler.pkl` | StandardScaler untuk normalisasi input data user. |
+| `README.md` | File README.md |
 | `app.py` | Source code utama aplikasi Streamlit. |
+| `minmax_scaler.pkl` | StandardScaler untuk normalisasi input data user. |
+| `model_random_forest.pkl` | Model Random Forest yang sudah dilatih (Best Model). |
 | `requirements.txt` | Daftar library yang dibutuhkan untuk deployment cloud. |
+| `water_potability.csv`| Dataset mentah (Sumber: Kaggle). |
 
 ---
